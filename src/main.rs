@@ -94,10 +94,19 @@ async fn tmp() -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
-    HttpServer::new(|| App::new().service(all).service(co2).service(hum).service(tmp))
-        .bind((env::var("LOCAL_ADDRESS").unwrap(), 5980))?
-        .run()
-        .await
+    let port_result: Result<u16,_> = env::var("PORT").unwrap().parse();
+    match port_result{
+        Ok(port) => {
+                HttpServer::new(|| App::new().service(all).service(co2).service(hum).service(tmp))
+            .bind((env::var("LOCAL_ADDRESS").unwrap(), port))?
+            .run()
+            .await
+        },
+        Err(_) => {
+            println!("PORT is not a appropriate number");
+            std::process::exit(1);
+        }
+    }
 }
 
 impl UDCO2S {
