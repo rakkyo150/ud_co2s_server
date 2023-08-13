@@ -1,4 +1,4 @@
-use actix_web::{get, App, HttpServer, Responder};
+use actix_web::{get, App, HttpServer, Responder, HttpResponse};
 use serial::SerialPort;
 use std::io::{self, prelude::*};
 use std::time::SystemTime;
@@ -40,10 +40,10 @@ async fn all() -> impl Responder {
     let log = sensor.start_logging();
     match log{
         Ok(log) => {
-            format!("{:?}", log)
+            HttpResponse::Ok().json(log)
         },
         Err(e) => {
-            format!("{}", e)
+            HttpResponse::InternalServerError().body(format!("{}", e))
         }
     }
 }
@@ -54,10 +54,10 @@ async fn co2() -> impl Responder {
     let log = sensor.start_logging();
     match log{
         Ok(log) => {
-            format!("{}", log.status.co2ppm)
+            HttpResponse::Ok().body(log.status.co2ppm.to_string())
         },
         Err(e) => {
-            format!("{}", e)
+            HttpResponse::InternalServerError().body(format!("{}", e))
         }
     }
 }
@@ -68,10 +68,10 @@ async fn hum() -> impl Responder {
     let log = sensor.start_logging();
     match log{
         Ok(log) => {
-            format!("{}", log.status.humidity)
+            HttpResponse::Ok().body(log.status.humidity.to_string())
         },
         Err(e) => {
-            format!("{}", e)
+            HttpResponse::InternalServerError().body(format!("{}", e))
         }
     }
 }
@@ -82,10 +82,10 @@ async fn tmp() -> impl Responder {
     let log = sensor.start_logging();
     match log{
         Ok(log) => {
-            format!("{}", log.status.temperature)
+            HttpResponse::Ok().body(log.status.temperature.to_string())
         },
         Err(e) => {
-            format!("{}", e)
+            HttpResponse::InternalServerError().body(format!("{}", e))
         }
     }
 }
