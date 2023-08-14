@@ -8,7 +8,7 @@ UDCO2Sをラズパイに接続したときに、CO2濃度と温度と湿度を�
 次に、`example.env`と同じように、`.env`ファイルを作成してください。  
 その後、`cargo run`でサーバーが立ち上がるか確認してください。  
 サーバーが立ち上がるのを確認出来たら、`cargo build --release`でリリースビルドを作成してください。  
-リリースビルドは`./target/release/ud_co2s_server`にあります。
+リリースビルドは`./target/release/ud_co2s_server`にあります。  
 ラズパイの起動時にも自動でサーバーが立ち上がるようにするためには、systemctlのサービスに登録しましょう。
 ```bash
 sudo vim /etc/systemd/system/ud_co2s_server.service
