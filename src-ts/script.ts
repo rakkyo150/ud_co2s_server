@@ -28,9 +28,11 @@ window.addEventListener("DOMContentLoaded", () => {
 function change_display(result: boolean) {
   if (!result) {
     errorSentence!.style.display = "block";
+    errorSentence!.style.color = "red";
+    errorSentence!.textContent = "Error: Failed to get data from the sensor.";
   }
   else {
-    console.log("success");
+    errorSentence!.style.color = "black";
     errorSentence!.style.display = "none";
   };
 }

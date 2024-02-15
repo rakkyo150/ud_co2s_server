@@ -99,8 +99,8 @@ async fn main() -> std::io::Result<()> {
                 HttpServer::new(|| {
                     App::new()
                         .wrap(actix_web::middleware::Logger::default())
-                        .service(actix_files::Files::new("/assets", "./static/assets").show_files_listing())
-                        .service(actix_files::Files::new("/static", "./static").index_file("index.html"))
+                        .service(actix_files::Files::new("/assets", "./static/assets"))
+                        .service(actix_files::Files::new("/graph", "./static").index_file("index.html"))
                         .service(all).service(co2).service(hum).service(tmp)
                 })
             .bind((env::var("VITE_LOCAL_ADDRESS").unwrap(), port))?
