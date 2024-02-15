@@ -1,20 +1,22 @@
-use actix_web::{get, App, HttpServer, Responder, HttpResponse, Result};
+use actix_web::{get, web, App, HttpResponse, HttpServer, Responder, Result};
+use chrono::Local;
 use serial::SerialPort;
 use std::io::{self, prelude::*};
+use std::sync::Mutex;
 use std::time::SystemTime;
 use serde::{Serialize,Deserialize};
 use std::env;
 
 const DEVICE_PATH: &str = "/dev/ttyACM0";
 
-#[derive(Serialize,Deserialize,Debug)]
+#[derive(Serialize,Deserialize,Debug,Clone)]
 struct UDCO2SStat {
     co2ppm: i32,
     humidity: f32,
     temperature: f32,
 }
 
-#[derive(Serialize,Deserialize,Debug)]
+#[derive(Serialize,Deserialize,Debug,Clone)]
 pub struct Log{
     time: i64,
     status: UDCO2SStat
@@ -30,16 +32,26 @@ impl UDCO2SStat {
     }
 }
 
+struct LogCache {
+    data: Mutex<Log>,
+}
+
 pub struct UDCO2S {
     dev: String,
 }
 
 #[get("/all")]
-async fn all() -> impl Responder {
+async fn all(log_cache: web::Data<LogCache>) -> impl Responder {
+    let mut data = log_cache.data.lock().unwrap();
+    if data.time + 4 > get_now_utc_unix_time(){
+        return HttpResponse::Ok().json(data.clone());
+    }
+
     let sensor = UDCO2S::new(DEVICE_PATH);
     let log = sensor.start_logging();
     match log{
         Ok(log) => {
+            *data = log.clone();
             HttpResponse::Ok().json(log)
         },
         Err(e) => {
@@ -49,11 +61,17 @@ async fn all() -> impl Responder {
 }
 
 #[get("/co2")]
-async fn co2() -> impl Responder {
+async fn co2(log_cache: web::Data<LogCache>) -> impl Responder {
+    let mut data = log_cache.data.lock().unwrap();
+    if data.time + 4 > get_now_utc_unix_time(){
+        return HttpResponse::Ok().body(data.status.co2ppm.to_string());
+    }
+
     let sensor = UDCO2S::new(DEVICE_PATH);
     let log = sensor.start_logging();
     match log{
         Ok(log) => {
+            *data = log.clone();
             HttpResponse::Ok().body(log.status.co2ppm.to_string())
         },
         Err(e) => {
@@ -63,11 +81,17 @@ async fn co2() -> impl Responder {
 }
 
 #[get("/hum")]
-async fn hum() -> impl Responder {
+async fn hum(log_cache: web::Data<LogCache>) -> impl Responder {
+    let mut data = log_cache.data.lock().unwrap();
+    if data.time + 4 > get_now_utc_unix_time(){
+        return HttpResponse::Ok().body(data.status.humidity.to_string());
+    }
+
     let sensor = UDCO2S::new(DEVICE_PATH);
     let log = sensor.start_logging();
     match log{
         Ok(log) => {
+            *data = log.clone();
             HttpResponse::Ok().body(log.status.humidity.to_string())
         },
         Err(e) => {
@@ -77,11 +101,17 @@ async fn hum() -> impl Responder {
 }
 
 #[get("/tmp")]
-async fn tmp() -> impl Responder {
+async fn tmp(log_cache: web::Data<LogCache>) -> impl Responder {
+    let mut data = log_cache.data.lock().unwrap();
+    if data.time + 4 > get_now_utc_unix_time(){
+        return HttpResponse::Ok().body(data.status.temperature.to_string());
+    }
+
     let sensor = UDCO2S::new(DEVICE_PATH);
     let log = sensor.start_logging();
     match log{
         Ok(log) => {
+            *data = log.clone();
             HttpResponse::Ok().body(log.status.temperature.to_string())
         },
         Err(e) => {
@@ -94,10 +124,17 @@ async fn tmp() -> impl Responder {
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
     let port_result: Result<u16,_> = env::var("VITE_PORT").unwrap().parse();
+    let log_cache = web::Data::new(LogCache {
+        data: Mutex::new(Log{
+            time: 0,
+            status: UDCO2SStat::new(0, 0.0, 0.0)
+        }),
+    });
     match port_result{
         Ok(port) => {
-                HttpServer::new(|| {
+                HttpServer::new(move || {
                     App::new()
+                        .app_data(log_cache.clone())
                         .wrap(actix_web::middleware::Logger::default())
                         .service(actix_files::Files::new("/assets", "./static/assets"))
                         .service(actix_files::Files::new("/graph", "./static").index_file("index.html"))
@@ -187,4 +224,11 @@ fn read_until(port: &mut dyn serial::SerialPort, del: char) -> io::Result<String
             },
         }
     }
+}
+
+fn get_now_utc_unix_time() -> i64 {
+    let now = Local::now();
+    let timestamp = now.timestamp();
+    println!("{}", timestamp);
+    timestamp
 }
