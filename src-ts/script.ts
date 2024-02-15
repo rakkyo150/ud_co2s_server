@@ -1,4 +1,6 @@
 import Chart, { ChartOptions } from 'chart.js/auto';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 let errorSentence: HTMLSpanElement | null;
 let nowPpm: HTMLSpanElement | null;
 let chart: HTMLCanvasElement | null;
@@ -28,6 +30,7 @@ function change_display(result: boolean) {
     errorSentence!.style.display = "block";
   }
   else {
+    console.log("success");
     errorSentence!.style.display = "none";
   };
 }
