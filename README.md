@@ -17,10 +17,12 @@ sudo vim /etc/systemd/system/ud_co2s_server.service
 ```systemd
 [Unit]
 Description=Set up a server for ud_co2s_server
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-ExecStart=/home/pi/ud_co2s_server/target/release/ud_co2s_server
+Environment=HOME=/home/pi
+ExecStart=/bin/bash -c 'source $HOME/.bashrc && source $HOME/.profile && cargo run --release'
 WorkingDirectory=/home/pi/ud_co2s_server
 
 [Install]
