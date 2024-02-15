@@ -1,8 +1,7 @@
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder, Result};
-use chrono::Local;
 use serial::SerialPort;
 use std::io::{self, prelude::*};
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 use std::time::SystemTime;
 use serde::{Serialize,Deserialize};
 use std::env;
@@ -32,6 +31,10 @@ impl UDCO2SStat {
     }
 }
 
+struct SecondsInterval {
+    interval: u16,
+}
+
 struct LogCache {
     data: Mutex<Log>,
 }
@@ -41,9 +44,9 @@ pub struct UDCO2S {
 }
 
 #[get("/all")]
-async fn all(log_cache: web::Data<LogCache>) -> impl Responder {
+async fn all(seconds_interval: web::Data<SecondsInterval>, log_cache: web::Data<LogCache>) -> impl Responder {
     let mut data = log_cache.data.lock().unwrap();
-    if data.time + 4 > get_now_utc_unix_time(){
+    if should_use_cache(&data, seconds_interval) {
         return HttpResponse::Ok().json(data.clone());
     }
 
@@ -61,9 +64,9 @@ async fn all(log_cache: web::Data<LogCache>) -> impl Responder {
 }
 
 #[get("/co2")]
-async fn co2(log_cache: web::Data<LogCache>) -> impl Responder {
+async fn co2(seconds_interval: web::Data<SecondsInterval>, log_cache: web::Data<LogCache>) -> impl Responder {
     let mut data = log_cache.data.lock().unwrap();
-    if data.time + 4 > get_now_utc_unix_time(){
+    if should_use_cache(&data, seconds_interval) {
         return HttpResponse::Ok().body(data.status.co2ppm.to_string());
     }
 
@@ -81,9 +84,9 @@ async fn co2(log_cache: web::Data<LogCache>) -> impl Responder {
 }
 
 #[get("/hum")]
-async fn hum(log_cache: web::Data<LogCache>) -> impl Responder {
+async fn hum(seconds_interval: web::Data<SecondsInterval>, log_cache: web::Data<LogCache>) -> impl Responder {
     let mut data = log_cache.data.lock().unwrap();
-    if data.time + 4 > get_now_utc_unix_time(){
+    if should_use_cache(&data, seconds_interval) {
         return HttpResponse::Ok().body(data.status.humidity.to_string());
     }
 
@@ -101,9 +104,9 @@ async fn hum(log_cache: web::Data<LogCache>) -> impl Responder {
 }
 
 #[get("/tmp")]
-async fn tmp(log_cache: web::Data<LogCache>) -> impl Responder {
+async fn tmp(seconds_interval: web::Data<SecondsInterval>, log_cache: web::Data<LogCache>) -> impl Responder {
     let mut data = log_cache.data.lock().unwrap();
-    if data.time + 4 > get_now_utc_unix_time(){
+    if should_use_cache(&data, seconds_interval) {
         return HttpResponse::Ok().body(data.status.temperature.to_string());
     }
 
@@ -124,6 +127,9 @@ async fn tmp(log_cache: web::Data<LogCache>) -> impl Responder {
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
     let port_result: Result<u16,_> = env::var("VITE_PORT").unwrap().parse();
+    let sconds_interval = web::Data::new(SecondsInterval {
+        interval: 4,
+    });
     let log_cache = web::Data::new(LogCache {
         data: Mutex::new(Log{
             time: 0,
@@ -135,6 +141,7 @@ async fn main() -> std::io::Result<()> {
                 HttpServer::new(move || {
                     App::new()
                         .app_data(log_cache.clone())
+                        .app_data(sconds_interval.clone())
                         .wrap(actix_web::middleware::Logger::default())
                         .service(actix_files::Files::new("/assets", "./static/assets"))
                         .service(actix_files::Files::new("/graph", "./static").index_file("index.html"))
@@ -180,11 +187,9 @@ impl UDCO2S {
         
         if let Ok(line) = read_until(&mut port, '\n') {
             if let Some(m) = regex.captures(&line) {
-                let time_now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64;
-
                 let obj=Log{
-                    time : time_now,
-                    status:UDCO2SStat::new(
+                    time : now_time(),
+                    status: UDCO2SStat::new(
                         m["co2"].parse::<i32>().unwrap(),
                         m["hum"].parse::<f32>().unwrap(),
                         m["tmp"].parse::<f32>().unwrap()
@@ -226,9 +231,10 @@ fn read_until(port: &mut dyn serial::SerialPort, del: char) -> io::Result<String
     }
 }
 
-fn get_now_utc_unix_time() -> i64 {
-    let now = Local::now();
-    let timestamp = now.timestamp();
-    println!("{}", timestamp);
-    timestamp
+fn should_use_cache(data: &MutexGuard<'_, Log>, seconds_interval: web::Data<SecondsInterval>) -> bool {
+    data.time + i64::from(seconds_interval.interval) > now_time()
+}
+
+fn now_time() -> i64 {
+    SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64
 }

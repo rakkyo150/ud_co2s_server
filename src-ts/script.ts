@@ -32,8 +32,9 @@ function change_display(result: boolean) {
     errorSentence!.textContent = "Error: Failed to get data from the sensor.";
   }
   else {
-    errorSentence!.style.color = "black";
     errorSentence!.style.display = "none";
+    errorSentence!.style.color = "black";
+    errorSentence!.textContent = "Please Wait";
   };
 }
 
