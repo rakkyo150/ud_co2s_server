@@ -1,4 +1,4 @@
-use actix_web::{get, App, HttpServer, Responder, HttpResponse, Result, web};
+use actix_web::{get, App, HttpServer, Responder, HttpResponse, Result};
 use serial::SerialPort;
 use std::io::{self, prelude::*};
 use std::time::SystemTime;
@@ -93,16 +93,17 @@ async fn tmp() -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
-    let port_result: Result<u16,_> = env::var("PORT").unwrap().parse();
+    let port_result: Result<u16,_> = env::var("VITE_PORT").unwrap().parse();
     match port_result{
         Ok(port) => {
                 HttpServer::new(|| {
                     App::new()
                         .wrap(actix_web::middleware::Logger::default())
-                        .service(actix_files::Files::new("/static", "./static").show_files_listing())
+                        .service(actix_files::Files::new("/assets", "./static/assets").show_files_listing())
+                        .service(actix_files::Files::new("/static", "./static").index_file("index.html"))
                         .service(all).service(co2).service(hum).service(tmp)
                 })
-            .bind((env::var("LOCAL_ADDRESS").unwrap(), port))?
+            .bind((env::var("VITE_LOCAL_ADDRESS").unwrap(), port))?
             .run()
             .await
         },

@@ -1,15 +1,12 @@
 import Chart, { ChartOptions } from 'chart.js/auto';
 import fetch from 'node-fetch';
-import dotenv from 'dotenv';
 
 let errorSentence: HTMLSpanElement | null;
-let addressForm: HTMLFormElement | null;
 let nowPpm: HTMLSpanElement | null;
 let chart: HTMLCanvasElement | null;
 let chart2: any;
 
-dotenv.config();
-let address = process.env.ADDRESS + ":" + process.env.PORT;
+let address = import.meta.env.VITE_LOCAL_ADDRESS + ":" + import.meta.env.VITE_PORT;
 
 window.addEventListener("DOMContentLoaded", () => {
   errorSentence = document.querySelector("#error");
@@ -30,11 +27,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function change_display(result: boolean) {
   if (!result) {
-    addressForm!.style.display = "block";
     errorSentence!.style.display = "none";
   }
   else {
-    addressForm!.style.display = "none";
     errorSentence!.style.display = "block";
   };
 }
@@ -107,7 +102,9 @@ async function make_chart(): Promise<boolean>{
 async function invoke(address: string): Promise<string> {
   try {
       const response = await fetch(`http://${address}/co2`);
+      console.log(response);
       const text = await response.text();
+      console.log(text);
       return text;
   } catch (e) {
       throw new Error(e as string);

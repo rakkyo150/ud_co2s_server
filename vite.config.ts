@@ -20,6 +20,5 @@ export default defineConfig(async () => ({
     },
     chunkSizeWarningLimit: 100000000,
     outDir: "static",
-    assetsDir: "",
   },
 }));
