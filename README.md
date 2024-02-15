@@ -5,9 +5,10 @@ UDCO2Sをラズパイに接続したときに、CO2濃度と温度と湿度を�
 ## 使い方
 まずは、rustを実行できる環境を用意してください。  
 [ここ](https://www.rust-lang.org/tools/install)を参考にしてください。  
+また、npmも必要です。  
 次に、`example.env`と同じように、`.env`ファイルを作成してください。  
 **v1.2.0から、`.env`で設定する変数名の先頭に必ず`VITE_`が必要になったので注意してください。**  
-その後、`npm run prod`でサーバーが立ち上がるか確認してください。  
+`npm install`を実行後、`npm run prod`でサーバーが立ち上がるか確認してください。  
 ラズパイの起動時にも自動でサーバーが立ち上がるようにするためには、systemctlのサービスに登録しましょう。
 ```bash
 sudo vim /etc/systemd/system/ud_co2s_server.service
