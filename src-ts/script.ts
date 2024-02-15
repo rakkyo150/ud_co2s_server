@@ -1,6 +1,4 @@
 import Chart, { ChartOptions } from 'chart.js/auto';
-import fetch from 'node-fetch';
-
 let errorSentence: HTMLSpanElement | null;
 let nowPpm: HTMLSpanElement | null;
 let chart: HTMLCanvasElement | null;
@@ -27,10 +25,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function change_display(result: boolean) {
   if (!result) {
-    errorSentence!.style.display = "none";
+    errorSentence!.style.display = "block";
   }
   else {
-    errorSentence!.style.display = "block";
+    errorSentence!.style.display = "none";
   };
 }
 
@@ -102,9 +100,7 @@ async function make_chart(): Promise<boolean>{
 async function invoke(address: string): Promise<string> {
   try {
       const response = await fetch(`http://${address}/co2`);
-      console.log(response);
       const text = await response.text();
-      console.log(text);
       return text;
   } catch (e) {
       throw new Error(e as string);
