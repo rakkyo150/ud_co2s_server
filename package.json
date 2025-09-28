@@ -14,11 +14,11 @@
   "devDependencies": {
     "@types/node": "^20.11.17",
     "typescript": "^5.3.3",
-    "vite-plugin-node-polyfills": "^0.21.0"
+    "vite-plugin-node-polyfills": "^0.24.0"
   },
   "dependencies": {
     "bootstrap": "^5.3.2",
     "chart.js": "^4.4.1",
-    "vite": "^5.1.2"
+    "vite": "^7.1.7"
   }
 }
