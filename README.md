@@ -46,3 +46,4 @@ sudo systemctl start ud_co2s_server
 
 ## グラフの表示
 v1.2.0から、https://192.168.xxx.xxx:xxxx/graph にアクセスすれば、[ud_co2s_viewer](https://github.com/rakkyo150/ud_co2s_viewer)と同じCO2濃度のグラフが表示されるようになりました。  
+![graph](graph.png)
